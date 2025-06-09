@@ -105,15 +105,58 @@ th {
    transform:scale(1.05);
 }
 
+section a {
+    margin: 5px;
+    display: inline-block; /* чтобы margin работал корректно */
+}
+
 @media(max-width:768px){
-   .btn{
-    padding: 5px 10px;
-    font-size: 1em;
-    border-radius: 10px; 
-    border:none; 
-    cursor:pointer; 
-    transition: background-color 0.3s ease, transform 0.2s ease;
+   .btn {
+       padding: 5px 10px;
+       font-size: 1em;
+       border-radius: 10px; 
+       border: none; 
+       cursor: pointer; 
+       transition: background-color 0.3s ease, transform 0.2s ease;
+       margin: 5px; /* добавляем отступы вокруг кнопок */
    }
+}
+
+@media(max-width: 768px){
+  table {
+    display: block;
+    overflow-x: auto;
+    width: 100%;
+    -webkit-overflow-scrolling: touch; /* плавный скролл на iOS */
+  }
+  thead, tbody, tr, th, td {
+    display: block;
+  }
+  thead {
+    display: none; /* скрываем заголовки для мобильных */
+  }
+  tr {
+    margin-bottom: 15px;
+    border-bottom: 2px solid #ccc;
+    padding: 10px;
+  }
+  td {
+    position: relative;
+    padding-left: 50%;
+    border: none;
+    border-bottom: 1px solid #ddd;
+  }
+  td::before {
+    position: absolute;
+    top: 0;
+    left: 10px;
+    width: calc(50% - 20px);
+    padding-right: 10px;
+    white-space: nowrap;
+    font-weight: bold;
+    content: attr(data-label);
+  }
+}
 }
 </style>
 </head>
@@ -143,17 +186,16 @@ th {
 </tr>
 <?php foreach ($result_orders as $order): ?>
 <tr>
-  <td><?= htmlspecialchars($order['created_at']) ?></td>
-  <td><?= htmlspecialchars($order['address']) ?></td>
-  <td><?= htmlspecialchars($order['name']) ?></td>
-  <td><?= htmlspecialchars($order['phone']) ?></td>
-  <td><?= htmlspecialchars($order['date']) ?></td>
-  <td><?= htmlspecialchars($order['time']) ?></td>
-  <td><?= htmlspecialchars($order['service_type']) ?></td>
-  <td><?= htmlspecialchars($order['payment_type']) ?></td>
-  <td><?= htmlspecialchars($order['status']) ?></td>
-  <!-- вывод причины отмены -->
-  <td><?= htmlspecialchars($order['cancel_comment'] ?? '') ?></td>
+  <td data-label="Дата создания"><?= htmlspecialchars($order['created_at']) ?></td>
+  <td data-label="Адрес"><?= htmlspecialchars($order['address']) ?></td>
+  <td data-label="Имя"><?= htmlspecialchars($order['name']) ?></td>
+  <td data-label="Телефон"><?= htmlspecialchars($order['phone']) ?></td>
+  <td data-label="Дата услуги"><?= htmlspecialchars($order['date']) ?></td>
+  <td data-label="Время услуги"><?= htmlspecialchars($order['time']) ?></td>
+  <td data-label="Тип услуги"><?= htmlspecialchars($order['service_type']) ?></td>
+  <td data-label="Способ оплаты"><?= htmlspecialchars($order['payment_type']) ?></td>
+  <td data-label="Статус"><?= htmlspecialchars($order['status']) ?></td>
+  <td data-label="Причина отмены"><?= htmlspecialchars($order['cancel_comment'] ?? '') ?></td>
 </tr>
 <?php endforeach; ?>
 </table>

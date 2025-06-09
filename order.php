@@ -5,7 +5,8 @@ error_reporting(E_ALL);
 // Стартуем сессию для получения user_id
 session_start();
 if (!isset($_SESSION['user_id'])) {
-    die("Пользователь не авторизован");
+        header('Location: login.php');
+    exit;
 }
 $user_id = $_SESSION['user_id'];
 

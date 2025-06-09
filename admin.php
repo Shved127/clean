@@ -68,6 +68,7 @@ $result = $conn->query($sql);
 <html lang="ru">
 <head>
 <meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Панель администратора - Заказы</title>
 <style>
   table { width: 100%; border-collapse: collapse; }
@@ -91,6 +92,43 @@ $result = $conn->query($sql);
 .btn-primary:hover{
    background-color:#0056b3; 
    transform:scale(1.05);
+}
+
+@media(max-width: 768px) {
+  body {
+    font-size: 14px;
+  }
+
+  table {
+    font-size: 0.9em;
+  }
+
+  /* Сделать кнопки более компактными */
+  .btn {
+    padding: 4px 10px;
+    font-size: 1em;
+  }
+
+  /* Сделать формы и поля ввода более компактными */
+  input[type="text"], select {
+    width: auto;
+    max-width: 150px;
+    font-size: 0.9em;
+    padding: 4px;
+    margin-top: 4px;
+    display:inline-block;
+  }
+
+  /* Убрать лишние отступы или изменить расположение элементов */
+}
+
+@media(max-width:768px){
+   form select,
+   form input[type="text"] {
+       width: auto;
+       max-width: 150px;
+       font-size:0.9em;
+   }
 }
 </style>
 </head>
@@ -121,6 +159,19 @@ $result = $conn->query($sql);
     <?php if ($result && $result->num_rows > 0): ?>
       <?php while ($row = $result->fetch_assoc()): ?>
         <tr>
+
+  <td data-label="Дата создания"><?= htmlspecialchars($order['order_id']) ?></td>
+  <td data-label="Адрес"><?= htmlspecialchars($order['address']) ?></td>
+  <td data-label="Имя"><?= htmlspecialchars($order['order_name']) ?></td>
+  <td data-label="Телефон"><?= htmlspecialchars($order['phone']) ?></td>
+  <td data-label="Дата услуги"><?= htmlspecialchars($order['date']) ?></td>
+  <td data-label="Время услуги"><?= htmlspecialchars($order['time']) ?></td>
+  <td data-label="Тип услуги"><?= htmlspecialchars($order['service_type']) ?></td>
+  <td data-label="Способ оплаты"><?= htmlspecialchars($order['payment_type']) ?></td>
+  <td data-label="Статус"><?= htmlspecialchars($order['status']) ?></td>
+  <td data-label="Причина отмены"><?= htmlspecialchars($order['cancel_comment'] ?? '') ?></td>
+
+
           <td><?= htmlspecialchars($row['order_id']) ?></td>
           <td><?= htmlspecialchars($row['address']) ?></td>
           <td><?= htmlspecialchars($row['order_name']) ?></td>

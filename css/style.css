@@ -1,196 +1,207 @@
-/* Общие стили */
-body {
-    margin: 0;
-    font-family: 'Arial', sans-serif;
-    background-color: #f0f8ff;
-    background-image: url('../../clean/img/background.png');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    color: #333;
+    /* Общие стили */
+    body {
+        margin: 0;
+        font-family: 'Arial', sans-serif;
+        background-color: #f0f8ff;
+        background-image: url('../../clean/img/background.png');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        color: #333;
+    }
+
+    /* Контейнер для фиксации футера внизу */
+    .container {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+    }
+
+    /* Шапка сайта */
+    header {
+        background-color: rgba(0, 123, 255, 0.8);
+        padding: 20px;
+        text-align: center;
+        color: white;
+    }
+
+    header h1 {
+        margin: 0;
+        font-size: 2.5em;
+    }
+
+    header.nav {
+        list-style: none;       
+        padding: 0;             
+        margin: 0;              
+        display: flex;          
+        justify-content: center; 
+    }
+
+    a {
+        text-decoration: none; /* Убираем подчеркивание у всех ссылок по умолчанию */
+    }
+
+    nav {
+        margin-top: 10px;
+    }
+
+    nav a {
+        color: white;
+        margin: 0 15px;
+        font-weight: bold;
+    }
+
+    nav a:hover {
+        text-decoration: underline; /* Можно оставить или убрать по желанию */
+    }
+
+    /* Убираем метки у навигационного меню и делаем его горизонтальным */
+    nav ul {
+        list-style: none;       
+        padding: 0;             
+        margin: 0;              
+        display: flex;          
+        justify-content: center; 
+    }
+
+    nav li {
+        margin: 0 15px;         
+    }
+
+/* Адаптивное меню */
+@media(max-width: 768px) {
+    nav ul {
+        flex-direction: column; /* Вертикальное расположение пунктов */
+        align-items: center;    /* Центрирование по горизонтали */
+    }
+    nav li {
+        margin: 10px 0; /* Отступы между пунктами */
+    }
 }
 
-/* Контейнер для фиксации футера внизу */
-.container {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-}
+    /* Прижимаем футер к низу */
+    footer {
+        margin-top: auto; 
+    }
 
-/* Шапка сайта */
-header {
-    background-color: rgba(0, 123, 255, 0.8);
-    padding: 20px;
-    text-align: center;
-    color: white;
-}
+    /* Основной контент */
+    main {
+        padding: 40px 20px;
+        max-width: 1200px;
+        margin-left:auto;
+        margin-right:auto;
+    }
 
-header h1 {
-    margin: 0;
-    font-size: 2.5em;
-}
+    /* Блок с кнопками */
+    .actions {
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+        flex-wrap: wrap; /* Для адаптивности */
+    }
 
-header.nav {
-    list-style: none;       
-    padding: 0;             
-    margin: 0;              
-    display: flex;          
-    justify-content: center; 
-}
+    /* Общий стиль для кнопок - убираем подчеркивание и добавляем курсор */
+    .btn {
+        padding: 15px 30px;
+        font-size: 1.2em;
+        border-radius: 8px; 
+        border:none; 
+        cursor:pointer; 
+        transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+    /* Стиль для основной кнопки */
+    .btn-primary {
+    text-decoration:none;
+    background-color:#007bff; 
+    color:white; 
+    }
+    .btn-primary:hover{
+    background-color:#0056b3; 
+    transform:scale(1.05);
+    }
+    
+    /* Вторая кнопка */
+    .btn-secondary {
+    background-color:#6c757d; 
+    color:white; 
+    }
+    
+    .btn-secondary:hover {
+    background-color:#495057; 
+    transform: scale(1.05);
+    }
 
-a {
-    text-decoration: none; /* Убираем подчеркивание у всех ссылок по умолчанию */
-}
+    /* Форма заказа */
+    .order-form {
+    max-width:600px; 
+    margin:auto; 
+    }
+    .order-form label {
+    display:block; 
+    margin-top:.5em; 
+    }
+    .order-form input,
+    .order-form select {
+    width:100%; 
+    padding:.75em; 
+    margin-top:.25em; 
+    border-radius:.4em; 
+    border:#ccc solid; 
+    box-sizing:border-box;
+    }
+    .order-form button {
+    margin-top:.75em; 
+    }
 
-nav {
-    margin-top: 10px;
-}
+    /* Подвал сайта - прижать к низу страницы */
+    footer {
+    background-color:#333; 
+    color:white; 
+    text-align:center; 
+    padding:20px; 
+    }
 
-nav a {
-    color: white;
-    margin: 0 15px;
-    font-weight: bold;
-}
+    /* Адаптивность для мобильных устройств */
+    @media(max-width:768px){
+    .actions{
+        flex-direction:flex-column; /* исправлено на 'column' вместо 'flex-column' */
+        gap:none; /* можно убрать или оставить как есть, если нужно убрать промежутки */
+        align-items:center;
+    }
+    }
 
-nav a:hover {
-    text-decoration: underline; /* Можно оставить или убрать по желанию */
-}
-
-/* Убираем метки у навигационного меню и делаем его горизонтальным */
-nav ul {
-    list-style: none;       
-    padding: 0;             
-    margin: 0;              
-    display: flex;          
-    justify-content: center; 
-}
-
-nav li {
-    margin: 0 15px;         
-}
-
-/* Прижимаем футер к низу */
-footer {
-    margin-top: auto; 
-}
-
-/* Основной контент */
-main {
-    padding: 40px 20px;
-    max-width: 1200px;
-    margin-left:auto;
-    margin-right:auto;
-}
-
-/* Блок с кнопками */
-.actions {
-    display: flex;
-    justify-content: center;
-    gap: 30px;
-    flex-wrap: wrap; /* Для адаптивности */
-}
-
-/* Общий стиль для кнопок - убираем подчеркивание и добавляем курсор */
-.btn {
-    padding: 15px 30px;
-    font-size: 1.2em;
-    border-radius: 8px; 
-    border:none; 
-    cursor:pointer; 
-    transition: background-color 0.3s ease, transform 0.2s ease;
-}
-/* Стиль для основной кнопки */
-.btn-primary {
-   text-decoration:none;
-   background-color:#007bff; 
-   color:white; 
-}
-.btn-primary:hover{
-   background-color:#0056b3; 
-   transform:scale(1.05);
-}
-  
-/* Вторая кнопка */
-.btn-secondary {
-   background-color:#6c757d; 
-   color:white; 
-}
-  
-.btn-secondary:hover {
-   background-color:#495057; 
-   transform: scale(1.05);
-}
-
-/* Форма заказа */
-.order-form {
-   max-width:600px; 
-   margin:auto; 
-}
-.order-form label {
-   display:block; 
-   margin-top:.5em; 
-}
-.order-form input,
-.order-form select {
-   width:100%; 
-   padding:.75em; 
-   margin-top:.25em; 
-   border-radius:.4em; 
-   border:#ccc solid; 
-   box-sizing:border-box;
-}
-.order-form button {
-   margin-top:.75em; 
-}
-
-/* Подвал сайта - прижать к низу страницы */
-footer {
-   background-color:#333; 
-   color:white; 
-   text-align:center; 
-   padding:20px; 
-}
-
-/* Адаптивность для мобильных устройств */
-@media(max-width:768px){
-   .actions{
-       flex-direction:flex-column; /* исправлено на 'column' вместо 'flex-column' */
-       gap:none; /* можно убрать или оставить как есть, если нужно убрать промежутки */
-       align-items:center;
-   }
-}
-
-/* Стили для формы регистрации */
-.registration-form {
-    max-width: 500px;
-    margin:auto;
-     padding :20px ;
-     background-color : rgba(255,255,255,0.9);
-     border-radius :10px ;
-     box-shadow :0 0 10px rgba(0,0,0,0.3);
-}
-.registration-form label {
-     display:block ;
-     margin-top :1em ;
-}
-.registration-form input {
-     width :100% ;
-     padding :.75em ;
-     margin-top :.25em ;
-     border-radius :.4em ;
-     border :#ccc solid ;
-     box-sizing :border-box ;
-}
-.registration-form button{
-     margin-top :1.5em ;
-     padding :.75em 2em ;
-     font-size :1em ;
-     border-radius :.4em ;
-     border:none ;
-     background-color:#007bff ; 
-     color:white ; 
-     cursor:pointer ;
-}
-.registration-form button:hover{
-     background-color:#0056b3 ; 
-}
+    /* Стили для формы регистрации */
+    .registration-form {
+        max-width: 500px;
+        margin:auto;
+        padding :20px ;
+        background-color : rgba(255,255,255,0.9);
+        border-radius :10px ;
+        box-shadow :0 0 10px rgba(0,0,0,0.3);
+    }
+    .registration-form label {
+        display:block ;
+        margin-top :1em ;
+    }
+    .registration-form input {
+        width :100% ;
+        padding :.75em ;
+        margin-top :.25em ;
+        border-radius :.4em ;
+        border :#ccc solid ;
+        box-sizing :border-box ;
+    }
+    .registration-form button{
+        margin-top :1.5em ;
+        padding :.75em 2em ;
+        font-size :1em ;
+        border-radius :.4em ;
+        border:none ;
+        background-color:#007bff ; 
+        color:white ; 
+        cursor:pointer ;
+    }
+    .registration-form button:hover{
+        background-color:#0056b3 ; 
+    }
