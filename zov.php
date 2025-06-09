@@ -104,6 +104,17 @@ th {
    background-color:#0056b3; 
    transform:scale(1.05);
 }
+
+@media(max-width:768px){
+   .btn{
+    padding: 5px 10px;
+    font-size: 1em;
+    border-radius: 10px; 
+    border:none; 
+    cursor:pointer; 
+    transition: background-color 0.3s ease, transform 0.2s ease;
+   }
+}
 </style>
 </head>
 <body>
