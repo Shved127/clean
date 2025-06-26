@@ -13,7 +13,7 @@ if (!isset($_SESSION['user_id'])) {
 
 // Подключение к базе данных
 $host = 'localhost';
-$db   = 'db_cllean';
+$db   = 'sportgo_db';
 $user = 'shved';
 $pass = 'DeadDemon6:6';
 
@@ -22,16 +22,18 @@ if ($conn->connect_error) {
     die("Ошибка подключения: " . $conn->connect_error);
 }
 
-// Проверка авторизации
-if (!isset($_SESSION['user_id'])) {
-    die("Пожалуйста, войдите в систему для просмотра этой страницы.");
-}
-
 $user_id = $_SESSION['user_id'];
+
+// Получение всех типов инвентаря для быстрого доступа
+$equipments = [];
+$result_equipments = $conn->query("SELECT equipment_id, name FROM equipment");
+while ($row = $result_equipments->fetch_assoc()) {
+    $equipments[$row['equipment_id']] = $row['name'];
+}
 
 // Получение истории заявок пользователя
 $result_orders = [];
-$stmt_orders = $conn->prepare("SELECT * FROM orders WHERE user_id = ? ORDER BY date DESC");
+$stmt_orders = $conn->prepare("SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC");
 $stmt_orders->bind_param("i", $user_id);
 $stmt_orders->execute();
 $result_orders_obj = $stmt_orders->get_result();
@@ -41,7 +43,6 @@ while ($row = $result_orders_obj->fetch_assoc()) {
 $stmt_orders->close();
 
 ?>
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -57,7 +58,7 @@ body {
     margin: 0;
     padding: 20px;
 }
-h1 {
+h1, h2 {
     text-align: center;
 }
 .message {
@@ -116,7 +117,7 @@ section a {
        font-size: 1em;
        border-radius: 10px; 
        border: none; 
-       cursor: pointer; 
+       cursor:pointer; 
        transition: background-color 0.3s ease, transform 0.2s ease;
        margin: 5px; /* добавляем отступы вокруг кнопок */
    }
@@ -151,56 +152,51 @@ section a {
     top: 0;
     left: 10px;
     width: calc(50% - 20px);
-    padding-right: 10px;
+    padding-right:10px;
     white-space: nowrap;
-    font-weight: bold;
+    font-weight:bold;
     content: attr(data-label);
   }
-}
 }
 </style>
 </head>
 <body>
 
-<h1>История ваших заявок</h1>
+<h1>Личный кабинет</h1>
 
-<section style=text-align:center;>
-<a href="../clean/order.php" type="submit" class="btn btn-primary">Оставить новую заявку</a>
-<a href="../clean/index.php" type="submit" class="btn btn-primary">Вернуться на главную</a>
-<a href="../clean/logout.php" type="submit" class="btn btn-primary">Выйти</a>
+<section style="text-align:center;">
+<a href="order.php" class="btn btn-primary">Создать заявку</a>
+<a href="logout.php" class="btn btn-primary">Выйти</a>
 </section>
 
+<h2>История ваших заявок</h2>
+
 <?php if (count($result_orders) > 0): ?>
-<table>
+<table style="text-align:center;">
 <tr>
   <th>Дата создания</th>
-  <th>Адрес</th>
-  <th>Имя</th>
-  <th>Телефон</th>
-  <th>Дата услуги</th>
-  <th>Время услуги</th>
-  <th>Тип услуги</th>
-  <th>Способ оплаты</th>
+  <th>Тип инвентаря</th>
+  <th>начало аренды</th>
+  <th>конец аренды</th>
+  <th>способ оплаты</th>
   <th>Статус</th>
-  <th>Причина отмены</th> <!-- добавляем колонку -->
 </tr>
 <?php foreach ($result_orders as $order): ?>
 <tr>
   <td data-label="Дата создания"><?= htmlspecialchars($order['created_at']) ?></td>
-  <td data-label="Адрес"><?= htmlspecialchars($order['address']) ?></td>
-  <td data-label="Имя"><?= htmlspecialchars($order['name']) ?></td>
-  <td data-label="Телефон"><?= htmlspecialchars($order['phone']) ?></td>
-  <td data-label="Дата услуги"><?= htmlspecialchars($order['date']) ?></td>
-  <td data-label="Время услуги"><?= htmlspecialchars($order['time']) ?></td>
-  <td data-label="Тип услуги"><?= htmlspecialchars($order['service_type']) ?></td>
-  <td data-label="Способ оплаты"><?= htmlspecialchars($order['payment_type']) ?></td>
-  <td data-label="Статус"><?= htmlspecialchars($order['status']) ?></td>
-  <td data-label="Причина отмены"><?= htmlspecialchars($order['cancel_comment'] ?? '') ?></td>
+  
+
+<td data-label="Тип инвентаря"><?= htmlspecialchars($equipments[$order['equipment_id']] ?? 'Неизвестно') ?></td>
+
+<td data-label="начало аренды"><?= htmlspecialchars($order['start_time']) ?></td>
+<td data-label="конец аренды"><?= htmlspecialchars($order['end_time']) ?></td>
+<td data-label="способ оплаты"><?= htmlspecialchars($order['payment_method']) ?></td>
+<td data-label="Статус"><?= htmlspecialchars($order['status']) ?></td>
 </tr>
 <?php endforeach; ?>
 </table>
 
-<?php else: ?>
+<?php else : ?>
 <p style='text-align:center;'>У вас пока нет заявок.</p>
 <?php endif; ?>
 

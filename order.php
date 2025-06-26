@@ -5,14 +5,14 @@ error_reporting(E_ALL);
 // Стартуем сессию для получения user_id
 session_start();
 if (!isset($_SESSION['user_id'])) {
-        header('Location: login.php');
+    header('Location: login.php');
     exit;
 }
 $user_id = $_SESSION['user_id'];
 
 // Подключение к базе данных
 $host = 'localhost';
-$db   = 'db_cllean';
+$db   = 'sportgo_db';
 $user = 'shved';
 $pass = 'DeadDemon6:6';
 
@@ -21,61 +21,98 @@ if ($conn->connect_error) {
     die("Ошибка подключения: " . $conn->connect_error);
 }
 
-$message = '';
+// Получение данных для селектов
+// Инвентарь
+$equipments = [];
+$result = $conn->query("SELECT equipment_id, name FROM equipment");
+while ($row = $result->fetch_assoc()) {
+    $equipments[] = $row;
+}
 
+// Пункты выдачи
+$pickup_points = [];
+$result = $conn->query("SELECT point_id, address FROM pickup_points");
+while ($row = $result->fetch_assoc()) {
+    $pickup_points[] = $row;
+}
+
+// Обработка формы при отправке
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Проверка обязательных полей
-    if (empty($_POST['address']) || empty($_POST['name']) || empty($_POST['phone']) || 
-        empty($_POST['date']) || empty($_POST['time']) || empty($_POST['service_type']) || 
-        empty($_POST['payment_type'])) {
-        $message = "Пожалуйста, заполните все обязательные поля.";
-    } else {
-        $phone = $_POST['phone'];
-        // Проверка номера телефона (начинается с 7 или 8 и далее 10 цифр)
-        if (!preg_match('/^[78][0-9]{10}$/', $phone)) {
-            $message = "Некорректный номер телефона. Формат: 7XXXXXXXXXX или 8XXXXXXXXXX";
-        } else {
-            $date = $_POST['date'];
-            // Проверка формата даты
-            $d = DateTime::createFromFormat('Y-m-d', $date);
-            if (!$d || $d->format('Y-m-d') !== $date) {
-                $message = "Некорректная дата.";
-            } else {
-                // Получение данных из формы
-                $address = $_POST['address'];
-                $name = $_POST['name'];
-                $time = $_POST['time'];
-                $service_type = $_POST['service_type'];
-                $payment_type = $_POST['payment_type'];
+    // Проверка наличия всех обязательных полей
+    if (
+        isset($_POST['equipment'], $_POST['pickup_point'], $_POST['start_time'], $_POST['end_time'], $_POST['payment_method'])
+        && !empty($_POST['equipment']) && !empty($_POST['pickup_point']) && !empty($_POST['start_time']) && !empty($_POST['end_time']) && !empty($_POST['payment_method'])
+    ) {
+        // Получение и приведение данных
+        $equipment_id = intval($_POST['equipment']);
+        $point_id = intval($_POST['pickup_point']);
+        $start_time_input = $_POST['start_time'];
+        $end_time_input = $_POST['end_time'];
+        $payment_method = $_POST['payment_method'];
 
-                // Подготовка запроса на вставку
-                $stmt = $conn->prepare("INSERT INTO orders (address, name, phone, date, time, service_type, payment_type, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-                if ($stmt === false) {
-                    die("Ошибка подготовки запроса: " . $conn->error);
-                }
-
-                $stmt->bind_param("sssssssi", 
-                    $address, 
-                    $name, 
-                    $phone, 
-                    $date, 
-                    $time, 
-                    $service_type, 
-                    $payment_type,
-                    $user_id
-                );
-
-                if ($stmt->execute()) {
-                    // После успешной вставки делаем редирект
-                    header("Location: zov.php");
-                    exit();
-                } else {
-                    $message = "Ошибка при сохранении: " . $stmt->error;
-                }
-
-                $stmt->close();
-            }
+        // Проверка существования оборудования
+        $stmt_check_eq = $conn->prepare("SELECT price_per_hour, available_quantity FROM equipment WHERE equipment_id = ?");
+        $stmt_check_eq->bind_param("i", $equipment_id);
+        $stmt_check_eq->execute();
+        $res_eq = $stmt_check_eq->get_result();
+        if ($res_eq->num_rows === 0) {
+            die('Инвентарь не найден');
         }
+        $equipment_data = $res_eq->fetch_assoc();
+        $price_per_hour = floatval($equipment_data['price_per_hour']);
+
+        // Обработка дат и времени
+        try {
+            $start_dt = new DateTime($start_time_input);
+            $end_dt = new DateTime($end_time_input);
+        } catch (Exception $e) {
+            die('Некорректная дата или время.');
+        }
+
+        if ($end_dt <= $start_dt) {
+            die('Дата окончания должна быть позже начала.');
+        }
+
+        // Расчет продолжительности в часах (округление вверх)
+        $interval = $start_dt->diff($end_dt);
+        // Время в часах (учитываем дни)
+        $hours = max(1, (int)ceil($interval->h + ($interval->d * 24)));
+
+        // Общая цена
+        $total_price = round($hours * $price_per_hour, 2);
+
+        // Вставляем заказ
+        $stmt_insert = $conn->prepare(
+            "INSERT INTO orders (user_id, equipment_id, point_id, start_time, end_time, total_price, payment_method) 
+             VALUES (?, ?, ?, ?, ?, ?, ?)"
+        );
+        
+        if (!$stmt_insert) {
+            die('Ошибка подготовки запроса: ' . htmlspecialchars($conn->error));
+        }
+
+        // Связываем параметры
+        // Обратите внимание на типы: i - integer, d - double/float, s - string
+        $stmt_insert->bind_param(
+            "iiissds",
+            $_SESSION['user_id'],
+            $equipment_id,
+            $point_id,
+            $start_time_input,
+            $end_time_input,
+            number_format($total_price, 2),
+            htmlspecialchars($payment_method)
+        );
+
+        if ($stmt_insert->execute()) {
+            echo "<p>Заказ успешно оформлен!</p>";
+            header('Location: zov   .php');
+            exit;
+        } else {
+            echo "<p>Ошибка при сохранении заказа: " . htmlspecialchars($conn->error) . "</p>";
+        }
+    } else {
+        echo "<p>Пожалуйста, заполните все поля формы.</p>";
     }
 }
 ?>
@@ -84,153 +121,113 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="ru">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Заказ</title>
+<title>Оформление заказа</title>
 <style>
-body {
+  body {
     font-family: Arial, sans-serif;
-    background-image: url('images/bg.jpg');
-    background-size: cover;
-    background-position: center;
+    background-color: #f4f4f4;
     margin: 0;
-    padding: 0;
-    color: #fff;
-}
+    padding: 20px;
+  }
 
-.center-container {
+  h1 {
     text-align: center;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-}
+    color: #333;
+  }
 
-.order-form {
+  form {
     max-width: 600px;
-    width: 100%;
+    margin: 0 auto;
+    background-color: #fff;
     padding: 30px;
-    background-color: rgba(5, 107, 218, 0.87);
-    border-radius: 30px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.5);
-    display: flex;
-    flex-direction: column;
-}
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
 
-.order-form h2 {
-    margin-bottom: 20px;
-    color: #fff;
-}
-
-.order-form label {
-    text-align: left;
-    margin-bottom: 5px;
+  label {
     display: block;
+    margin-bottom: 8px;
     font-weight: bold;
-}
+    color: #555;
+  }
 
-.order-form input[type=text],
-.order-form input[type=email],
-.order-form input[type=date],
-.order-form input[type=time],
-.order-form select,
-.order-form textarea {
+  input[type="datetime-local"],
+  select {
     width: 100%;
     padding: 10px;
-    margin-bottom: 15px;
-    border: none;
-    border-radius: 5px;
+    margin-bottom: 20px;цц
+    border-radius: 4px;
+    border: 1px solid #ccc;
     box-sizing: border-box;
-}
+    font-size: 16px;
+  }
 
-.order-form button {
-    padding: 10px 20px;
-    font-size: 20px;
-    background-color: #fff;
-    color: #007bff;
+  input[type="radio"] {
+    margin-right: 8px;
+  }
+
+  .payment-options {
+    margin-bottom: 20px;
+  }
+
+  button {
+    width: 100%;
+    padding: 12px;
+    background-color: #007BFF; /* синий цвет */
+    color: white;
     border: none;
-    border-radius: 20px;
+    border-radius: 4px;
+    font-size: 16px;
     cursor: pointer;
     transition: background-color 0.3s ease;
-}
+  }
 
-.order-form button:hover {
-    background-color: #e0e0e0;
-}
+  button:hover {
+    background-color: #0056b3; /* темнее при наведении */
+  }
 
-.message {
-    margin-bottom: 15px;
-    font-weight: bold;
-    color: #ffdddd;
-}
-a {
-    color: white;
-    text-decoration: none;
-}
-a:hover {
-    text-decoration: underline;
+  p {
+    max-width: 600px;
+    margin:20px auto;
+    padding:15px;
+    background-color:#e0ffe0; /* светло-зеленый фон для сообщений */
+    border-left:5px solid #00cc00; 
+    border-radius:4px; 
 }
 </style>
 </head>
 <body>
+<h1>Оформление заказа</h1>
+<form method="post" action="">
+  <label for="equipment">Тип инвентаря:</label><br/>
+  <select name="equipment" id="equipment" required>
+      <option value="">Выберите инвентарь</option>
+      <?php foreach ($equipments as $eq): ?>
+          <option value="<?= htmlspecialchars($eq['equipment_id']) ?>"><?= htmlspecialchars($eq['name']) ?></option>
+      <?php endforeach; ?>
+  </select><br/><br/>
 
-<div class="center-container">
-    <form class="order-form" action="" method="post">
-        <h2>Оформление заказа</h2>
+  <label for="start_time">Дата и время начала аренды:</label><br/>
+  <input type="datetime-local" id="start_time" name="start_time" required><br/><br/>
 
-        <?php if ($message): ?>
-            <div class="message"><?php echo htmlspecialchars($message); ?></div>
-        <?php endif; ?>
+  <label for="end_time">Дата и время окончания аренды:</label><br/>
+  <input type="datetime-local" id="end_time" name="end_time" required><br/><br/>
 
-        <label for="address">Адрес:</label>
-        <input type="text" id="address" name="address" required value="<?php echo isset($_POST['address']) ? htmlspecialchars($_POST['address']) : ''; ?>" />
+  <label for="pickup_point">Пункт выдачи:</label><br/>
+  <select name="pickup_point" id="pickup_point" required>
+      <option value="">Выберите пункт выдачи</option>
+      <?php foreach ($pickup_points as $point): ?>
+          <option value="<?= htmlspecialchars($point['point_id']) ?>"><?= htmlspecialchars($point['address']) ?></option>
+      <?php endforeach; ?>
+  </select><br/><br/>
 
-        <label for="name">Имя:</label>
-        <input type="text" id="name" name="name" required value="<?php echo isset($_POST['name']) ? htmlspecialchars($_POST['name']) : ''; ?>" />
+  <label>Способ оплаты:</label><br/>
+  <input type="radio" name="payment_method" value="cash" id="cash" required>
+  <label for="cash">Наличные</label><br/>
+  <input type="radio" name="payment_method" value="card" id="card">
+  <label for="card">Карта</label><br/><br/>
 
-        <label for="phone">Телефон:</label>
-        <input type="text" id="phone" name="phone" required placeholder="Например, 79991234567" value="<?php echo isset($_POST['phone']) ? htmlspecialchars($_POST['phone']) : ''; ?>" />
-
-        <label for="date">Дата:</label>
-        <input type="date" id="date" name="date" required value="<?php echo isset($_POST['date']) ? htmlspecialchars($_POST['date']) : ''; ?>" />
-
-        <label for="time">Время:</label>
-        <select id="time" name="time" required>
-          <option value="">Выберите время</option>
-          <option value="08:00" <?php if(isset($_POST['time']) && $_POST['time'] == '08:00') echo 'selected'; ?>>8:00</option>
-          <option value="09:00" <?php if(isset($_POST['time']) && $_POST['time'] == '09:00') echo 'selected'; ?>>9:00</option>
-          <option value="10:00" <?php if(isset($_POST['time']) && $_POST['time'] == '10:00') echo 'selected'; ?>>10:00</option>
-          <option value="11:00" <?php if(isset($_POST['time']) && $_POST['time'] == '11:00') echo 'selected'; ?>>11:00</option>
-          <option value="12:00" <?php if(isset($_POST['time']) && $_POST['time'] == '12:00') echo 'selected'; ?>>12:00</option>
-          <option value="13:00" <?php if(isset($_POST['time']) && $_POST['time'] == '13:00') echo 'selected'; ?>>13:00</option>
-          <option value="14:00" <?php if(isset($_POST['time']) && $_POST['time'] == '14:00') echo 'selected'; ?>>14:00</option>
-          <option value="15:00" <?php if(isset($_POST['time']) && $_POST['time'] == '15:00') echo 'selected'; ?>>15:00</option>
-          <option value="16:00" <?php if(isset($_POST['time']) && $_POST['time'] == '16:00') echo 'selected'; ?>>16:00</option>
-          <option value="17:00" <?php if(isset($_POST['time']) && $_POST['time'] == '17:00') echo 'selected'; ?>>17:00</option>
-          <option value="18:00" <?php if(isset($_POST['time']) && $_POST['time'] == '18:00') echo 'selected'; ?>>18:00</option>
-        </select>
-
-        <label for="service_type">Тип услуги:</label>
-        <select id="service_type" name="service_type" required>
-            <option value="">Выберите услугу</option>
-            <option value="Общий клининг" <?php if(isset($_POST['service_type']) && $_POST['service_type'] == 'Общий клининг') echo 'selected'; ?>>Общий клининг</option>
-            <option value="Генеральная уборка" <?php if(isset($_POST['service_type']) && $_POST['service_type'] == 'Генеральная уборка') echo 'selected'; ?>>Генеральная уборка</option>
-            <option value="Послестроительная уборка" <?php if(isset($_POST['service_type']) && $_POST['service_type'] == 'Послестроительная уборка') echo 'selected'; ?>>Послестроительная уборка</option>
-            <option value="Химчистка ковров и мебели" <?php if(isset($_POST['service_type']) && $_POST['service_type'] == 'Химчистка ковров и мебели') echo 'selected'; ?>>Химчистка ковров и мебели</option>
-        </select>
-
-        <label for="payment_type">Тип оплаты:</label>
-        <select id="payment_type" name="payment_type" required>
-            <option value="">Выберите способ оплаты</option>
-            <option value="Карта" <?php if(isset($_POST['payment_type']) && $_POST['payment_type'] == 'Карта') echo 'selected'; ?>>Карта</option>
-            <option value="Наличные" <?php if(isset($_POST['payment_type']) && $_POST['payment_type'] == 'Наличные') echo 'selected'; ?>>Наличные</option>
-        </select>
-
-        <button type="submit">Отправить заказ</button>
-        <p><a href="../clean/index.php">Вернуться на главную</a></p>
-    </form>
-</div>
-
+  <button type="submit">Подтвердить заказ</button>
+</form>
 </body>
 </html>
-
-Найти еще

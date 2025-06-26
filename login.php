@@ -3,7 +3,7 @@ session_start();
 
 // Подключение к базе данных
 $host = 'localhost';
-$db   = 'db_cllean';
+$db   = 'sportgo_db';
 $user = 'shved';
 $pass = 'DeadDemon6:6';
 
@@ -26,33 +26,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($login) || empty($password)) {
         $error_message = 'Пожалуйста, введите логин и пароль';
     } else {
-        // Поиск пользователя по логину
+        // Попытка найти пользователя в таблице users
         $stmt = $pdo->prepare("SELECT * FROM users WHERE login = ?");
         $stmt->execute([$login]);
         $user_data = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$user_data) {
-            $error_message = 'Пользователь с таким логином не найден.';
-        } else {
-            // Проверка пароля
+        if ($user_data) {
+            // Проверка пароля пользователя
             if (password_verify($password, $user_data['password'])) {
-                // Успешный вход — установить сессию
-                $_SESSION['user_id'] = $user_data['id'];
+                // Успешный вход для обычного пользователя
+                $_SESSION['user_id'] = $user_data['user_id']; // поле id в таблице users
                 $_SESSION['login'] = $user_data['login'];
                 $_SESSION['full_name'] = $user_data['full_name'] ?? '';
+                $_SESSION['role'] = 'user';
 
-                // Установка роли
-                if (isset($user_data['role']) && $user_data['role'] === 'admin') {
-                    $_SESSION['role'] = 'admin';
-                    header('Location: admin.php');  // Перенаправляем в админ-панель
-                    exit;
-                } else {
-                    $_SESSION['role'] = 'user';
-                    header('Location: index.php');  // Перенаправляем на главную для обычных пользователей
-                    exit;
-                }
+                header('Location: zov.php');
+                exit;
             } else {
                 $error_message = 'Неверный пароль.';
+            }
+        } else {
+            // Если пользователь не найден в users, ищем в admins
+            $stmt_admin = $pdo->prepare("SELECT * FROM admins WHERE login = ?");
+            $stmt_admin->execute([$login]);
+            $admin_data = $stmt_admin->fetch(PDO::FETCH_ASSOC);
+
+            if ($admin_data) {
+                // Проверка пароля администратора
+                if (password_verify($password, $admin_data['password'])) {
+                    $_SESSION['admin_id'] = $admin_data['admin_id']; // поле admin_id в таблице admins
+                    $_SESSION['login'] = $admin_data['login'];
+                    $_SESSION['role'] = 'admin';
+
+                    header('Location: admin.php');
+                    exit;
+                } else {
+                    $error_message = 'Неверный пароль.';
+                }
+            } else {
+                // Пользователь не найден ни там, ни там
+                $error_message = 'Пользователь с таким логином не найден.';
             }
         }
     }
@@ -62,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta charset="UTF-8" />
 <title>Вход в систему</title>
 <style>
@@ -125,8 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </form>
 
 <div class="links">
-<p>Нет аккаунта? <a href="../clean/register.php">Зарегистрироваться</a></p>
-<p><a href="../clean/index.php">Вернуться на главную</a></p>
+<p>Нет аккаунта? <a href="index.php">Зарегистрироваться</a></p>
 </div>
 
 </div>
